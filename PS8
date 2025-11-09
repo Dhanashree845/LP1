@@ -1,0 +1,142 @@
+import java.util.Arrays;
+
+public class SimplifiedMemoryAllocation {
+
+    private static final int[] INITIAL_BLOCKS = {100, 500, 200, 300, 600};
+    private static final int[] PROCESS_SIZES = {212, 417, 112, 426};
+
+    // --- Helper for Printing ---
+    private static void printHeader(String strategy) {
+        System.out.println("\n\n=== Strategy: " + strategy + " ===");
+        System.out.printf("%-10s | %-15s | %-10s | %-15s | %-15s\n", 
+                            "Process", "Process Size(KB)", "Block No", "Block Size(KB)", "Unused Space(KB)");
+        System.out.println("--------------------------------------------------------------------------");
+    }
+
+    // --- 1. First Fit Algorithm ---
+    public static void firstFit(int[] blocks, int[] processes) {
+        int numBlocks = blocks.length;
+        // Make a mutable copy of blocks for the simulation
+        int[] currentBlocks = Arrays.copyOf(blocks, numBlocks); 
+
+        printHeader("First Fit");
+
+        for (int i = 0; i < processes.length; i++) {
+            int processSize = processes[i];
+            int allocatedBlockIndex = -1;
+
+            // Search from the start for the first fit
+            for (int j = 0; j < numBlocks; j++) {
+                if (currentBlocks[j] >= processSize) {
+                    allocatedBlockIndex = j;
+                    break; // FOUND: Move to the next process
+                }
+            }
+            
+            // Output result
+            if (allocatedBlockIndex != -1) {
+                int initialSize = currentBlocks[allocatedBlockIndex];
+                currentBlocks[allocatedBlockIndex] -= processSize; // Allocate memory
+                int unusedSpace = currentBlocks[allocatedBlockIndex];
+                
+                System.out.printf("P%-9d | %-15d | B%-9d | %-15d | %-15d\n",
+                                  i + 1, processSize, allocatedBlockIndex + 1, initialSize, unusedSpace);
+            } else {
+                System.out.printf("P%-9d | %-15d | %-10s | %-15s | %-15s\n",
+                                  i + 1, processSize, "No Fit", "N/A", "N/A");
+            }
+        }
+    }
+    
+    // --- 2. Next Fit Algorithm ---
+    public static void nextFit(int[] blocks, int[] processes) {
+        int numBlocks = blocks.length;
+        int[] currentBlocks = Arrays.copyOf(blocks, numBlocks); 
+        int lastAllocatedIndex = 0; // Where the search starts
+        
+        printHeader("Next Fit");
+
+        for (int i = 0; i < processes.length; i++) {
+            int processSize = processes[i];
+            int allocatedBlockIndex = -1;
+            int blocksChecked = 0;
+
+            // Circular search starting from lastAllocatedIndex
+            while (blocksChecked < numBlocks) {
+                int j = (lastAllocatedIndex + blocksChecked) % numBlocks; // Circular index
+                
+                if (currentBlocks[j] >= processSize) {
+                    allocatedBlockIndex = j;
+                    
+                    // Set next start point to the block after this allocation
+                    lastAllocatedIndex = (j + 1) % numBlocks;
+                    break; 
+                }
+                blocksChecked++;
+            }
+            
+            // Output result
+            if (allocatedBlockIndex != -1) {
+                int initialSize = currentBlocks[allocatedBlockIndex];
+                currentBlocks[allocatedBlockIndex] -= processSize;
+                int unusedSpace = currentBlocks[allocatedBlockIndex];
+                
+                System.out.printf("P%-9d | %-15d | B%-9d | %-15d | %-15d\n",
+                                  i + 1, processSize, allocatedBlockIndex + 1, initialSize, unusedSpace);
+            } else {
+                System.out.printf("P%-9d | %-15d | %-10s | %-15s | %-15s\n",
+                                  i + 1, processSize, "No Fit", "N/A", "N/A");
+            }
+        }
+    }
+
+    // --- 3. Worst Fit Algorithm ---
+    public static void worstFit(int[] blocks, int[] processes) {
+        int numBlocks = blocks.length;
+        int[] currentBlocks = Arrays.copyOf(blocks, numBlocks); 
+        
+        printHeader("Worst Fit");
+
+        for (int i = 0; i < processes.length; i++) {
+            int processSize = processes[i];
+            int worstBlockIndex = -1;
+            int largestRemainingSpace = -1;
+
+            // Search ALL blocks to find the one that leaves the largest remainder
+            for (int j = 0; j < numBlocks; j++) {
+                if (currentBlocks[j] >= processSize) {
+                    int remaining = currentBlocks[j] - processSize;
+                    
+                    if (remaining > largestRemainingSpace) {
+                        largestRemainingSpace = remaining;
+                        worstBlockIndex = j;
+                    }
+                }
+            }
+            
+            // Output result
+            if (worstBlockIndex != -1) {
+                int initialSize = currentBlocks[worstBlockIndex];
+                currentBlocks[worstBlockIndex] -= processSize; // Allocate memory
+                int unusedSpace = currentBlocks[worstBlockIndex];
+                
+                System.out.printf("P%-9d | %-15d | B%-9d | %-15d | %-15d\n",
+                                  i + 1, processSize, worstBlockIndex + 1, initialSize, unusedSpace);
+            } else {
+                System.out.printf("P%-9d | %-15d | %-10s | %-15s | %-15s\n",
+                                  i + 1, processSize, "No Fit", "N/A", "N/A");
+            }
+        }
+    }
+
+
+    public static void main(String[] args) {
+        System.out.println("Initial Blocks: " + Arrays.toString(INITIAL_BLOCKS));
+        System.out.println("Processes: " + Arrays.toString(PROCESS_SIZES));
+        
+        // Run simulations
+        firstFit(INITIAL_BLOCKS, PROCESS_SIZES);
+        nextFit(INITIAL_BLOCKS, PROCESS_SIZES);
+        worstFit(INITIAL_BLOCKS, PROCESS_SIZES);
+    }
+}
